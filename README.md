@@ -1,4 +1,4 @@
-# ring-police-stats
+# ring-around-the-country
 
 Provides a parser for and UI to view a text list of the locations Ring has published that it has partnerships with police departments.
 
