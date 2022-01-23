@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link href="/bootstrap.css" rel="stylesheet">
+		<link href="//cdn.datatables.net/1.11.4/css/jquery.dataTables.min.css" rel="stylesheet">
+		<link href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+		<link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css" rel="stylesheet">
+		<title>Ring Around the Country</title>
+		<style type="text/css">
+			.active .card {
+				box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+			}
+			.col.btn {
+				text-align: left;
+			}
+
+			#filter:empty {
+				display: none;
+			}
+			#filter {
+				padding: 1em 0;
+				font-weight: bold;
+				font-size: 1.2em;
+			}
+			#filters-accordion {
+				margin-bottom: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Ring Around the Country</h1>
+			<p class="lead">
+				Ring, the home surveillance company owned by Amazon, proudly boasts of its over 1,900 "partnerships" with police agencies. Ring rewards departments who <a href="https://www.latimes.com/business/technology/story/2021-06-17/ring-influencer-marketing-los-angeles-police-department">promote its products &amp; services</a>, despite having <a href="https://www.cnet.com/features/rings-work-with-police-lacks-solid-evidence-of-reducing-crime/">little to no evidence</a> that it's effective in solving crime.<br>
+				<strong>And it's creepy.</strong><br>
+				Through the Neighbors Portal program, police can request surveillance video from anyone with a Ring camera. This puts the privacy of anyone who just happened to walk or drive by a house with one of these devices at risk.
+			</p>
+			<p>On a <a href="https://blog.ring.com/2019/08/28/working-together-for-safer-neighborhoods-introducing-the-neighbors-active-law-enforcement-map">blog post</a> promoting these partnerships, Ring includes a map of departments, but no easy list to look through without clicking each dot.</p>
+			<p>Search the table below for your local police department, or use the filters to search by state, county/municipality type, or year that the department joined the Ring Neighbors Portal program.</p>
+			<div class="accordion" id="filters-accordion">
+				<div class="accordion-item">
+					<strong class="accordion-header" id="filters-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#filters-body" aria-expanded="false" aria-controls="filters-body">Filters</button>
+					</strong>
+					<div id="filters-body" class="accordion-collapse collapse" aria-labelledby="filters-heading" data-bs-parent="#filters-accordion">
+						<div class="filter-section">
+							<h2>States</h2>
+							<div class="row row-cols-3 row-cols-md-6 g-1" id="states"></div>
+						</div>
+						<div class="filter-section">
+							<h2>Years</h2>
+							<div class="row row-cols-4 g-1" id="years"></div>
+						</div>
+						<div class="filter-section">
+							<h2>Types</h2>
+							<div class="row row-cols-2 row-cols-sm-4 g-1" id="types"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div id="filter"></div>
+			<table id="table" class="display table table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>State</th>
+						<th>Started</th>
+						<th>Type</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table> 
+		</div>
+
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+		<script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+		<script src="//cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
+		<script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+		<script>
+			let table;
+			let data;
+			fetch('./data/out.json')
+				.then(response => response.json())
+				.then(d => process(d));
+
+			function process(d) {
+				data = d;
+				buildStates(data);
+				buildYears(data);
+				buildTypes(data);
+				initDataTable(data);
+				setEvents();
+			}
+			function buildStates(data) {
+				const statesContainer = document.getElementById('states');
+				Object.keys(data.meta.states).forEach(state => {
+					if (data.meta.states[state].total == 0) { return; }
+					const stateCol = document.createElement('button');
+					stateCol.classList.add('btn');
+					stateCol.classList.add('col');
+					stateCol.setAttribute('data-state', state);
+					
+					const stateCard = document.createElement('div');
+					stateCard.classList.add('card');
+					
+
+					const stateCardBody = document.createElement('div');
+					stateCardBody.classList.add('card-body');
+
+					const stateCardTitle = document.createElement('h5');
+					stateCardTitle.innerText = state;
+
+					const stateCardDetails = document.createElement('p');
+					stateCardDetails.classList.add('card-text');
+					stateCardDetails.appendChild(document.createTextNode('Total: ' + data.meta.states[state].total));
+					stateCardDetails.appendChild(document.createElement('br'));
+					stateCardDetails.appendChild(document.createTextNode('County: ' + data.meta.states[state].county));
+					stateCardDetails.appendChild(document.createElement('br'));
+					stateCardDetails.appendChild(document.createTextNode('Municipality: ' + data.meta.states[state].municipality));
+
+					stateCardBody.appendChild(stateCardTitle);
+					stateCardBody.appendChild(stateCardDetails);
+					stateCard.appendChild(stateCardBody);
+					stateCol.appendChild(stateCard);
+					statesContainer.appendChild(stateCol);
+				});
+			}
+
+			function buildYears(data) {
+				const yearsContainer = document.getElementById('years');
+				Object.keys(data.meta.years).forEach(year => {
+					const yearCol = document.createElement('button');
+					yearCol.classList.add('col');
+					yearCol.classList.add('btn');
+					yearCol.setAttribute('data-year', year);
+
+					const yearCard = document.createElement('div');
+					yearCard.classList.add('card');
+
+					const yearCardBody = document.createElement('div');
+					yearCardBody.classList.add('card-body');
+
+					const yearCardTitle = document.createElement('h5');
+					yearCardTitle.innerText = year;
+
+					const yearCardDetails = document.createElement('p');
+					yearCardDetails.classList.add('card-text');
+					yearCardDetails.appendChild(document.createTextNode(data.meta.years[year]));
+
+					yearCardBody.appendChild(yearCardTitle);
+					yearCardBody.appendChild(yearCardDetails);
+					yearCard.appendChild(yearCardBody);
+					yearCol.appendChild(yearCard);
+					yearsContainer.appendChild(yearCol);
+				});
+			}
+
+			function buildTypes(data) {
+				const typesContainer = document.getElementById('types');
+				Object.keys(data.meta.localities).forEach(type => {
+					const typeCol = document.createElement('button');
+					typeCol.classList.add('col');
+					typeCol.classList.add('btn');
+					typeCol.setAttribute('data-type', type);
+
+					const typeCard = document.createElement('div');
+					typeCard.setAttribute('data-type', type);
+					typeCard.classList.add('card');
+
+					const typeCardBody = document.createElement('div');
+					typeCardBody.classList.add('card-body');
+
+					const typeCardTitle = document.createElement('h5');
+					typeCardTitle.innerText = type[0].toUpperCase() + type.substr(1);
+
+					typeCardBody.appendChild(typeCardTitle);
+					typeCard.appendChild(typeCardBody);
+					typeCol.appendChild(typeCard);
+					typesContainer.appendChild(typeCol);
+				});
+			}
+
+			function initDataTable(data) {
+				table = new DataTable('#table', {
+					responsive: true,
+					data: data.police,
+					columns: [
+						{ data: 'name' },
+						{ data: 'state' },
+						{ data: 'start_date' },
+						{ data: 'type' }
+					],
+					order: [[1, 'asc'], [0, 'asc']],
+					pageLength: 100,
+					pagingType: 'full_numbers',
+					columnDefs: [
+						{
+							targets: 3,
+							'render': function(data, type, row, meta) {
+								if (type == 'sort') {
+									return new Date(data).getTime();
+								} else {
+									return data;
+								}
+							}
+						}
+					]
+				});
+			}
+
+			function setEvents() {
+				document.querySelectorAll('[data-state]').forEach(function(el) {
+					el.addEventListener('click', function() {
+						if (!el.classList.contains('active')) {
+							const currentlyActive = el.closest('.filter-section').querySelector('.active');
+							if (currentlyActive) {
+								currentlyActive.classList.remove('active');
+							}
+							el.classList.add('active');
+							table.column(1).search(el.getAttribute('data-state')).draw();
+						} else {
+							table.column(1).search('').draw();
+							el.classList.remove('active');
+						}
+
+						updateFilterDisplay();
+					});
+				});
+				document.querySelectorAll('[data-year]').forEach(function(el) {
+					el.addEventListener('click', function() {
+						if (!el.classList.contains('active')) {
+							const currentlyActive = el.closest('.filter-section').querySelector('.active');
+							if (currentlyActive) {
+								currentlyActive.classList.remove('active');
+							}
+							el.classList.add('active');
+							table.column(2).search(el.getAttribute('data-year')).draw();
+						} else {
+							table.column(2).search('').draw();
+							el.classList.remove('active');
+						}
+
+						updateFilterDisplay();
+					});
+				});
+				document.querySelectorAll('[data-type]').forEach(function(el) {
+					el.addEventListener('click', function() {
+						if (!el.classList.contains('active')) {
+							const currentlyActive = el.closest('.filter-section').querySelector('.active');
+							if (currentlyActive) {
+								currentlyActive.classList.remove('active');
+							}
+							el.classList.add('active');
+							table.column(3).search(el.getAttribute('data-type')).draw();
+						} else {
+							table.column(3).search('').draw();
+							el.classList.remove('active');
+						}
+
+						updateFilterDisplay();
+					});
+				});
+			}
+
+			function updateFilterDisplay() {
+				const searched = [];
+
+				const typeSearch = table.column(3).search();
+				if (typeSearch.length) {
+					searched.push(typeSearch[0].toUpperCase() + typeSearch.substring(1, typeSearch.length - 1) + 'ies');
+				} else {
+					searched.push('Departments');
+				}
+
+				const stateSearch = table.column(1).search();
+				if (stateSearch.length) {
+					searched.push("in " + stateSearch);
+				}
+
+				const dateSearch = table.columns(2).search();
+				if (dateSearch[0].length) {
+					searched.push('that joined in ' + dateSearch[0]);
+				}
+
+				if (searched.length == 1 && searched[0] == ['Departments']) {
+					searched[0] = 'All Departments';
+				}
+
+				const searchedText = searched.join(' ');
+				document.getElementById('filter').innerText = searchedText[0].toUpperCase() + searchedText.substring(1);
+			}
+		</script>
+	</body>
+</html>
